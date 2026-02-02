@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Valentine Journey 💘 (with Recording)</title>
+  <style>
+    :root{
+      --pink:#ff3d7f;
+      --bg1:#ffe6f0;
+      --bg2:#fff;
+      --text:#1f1f1f;
+    }
+    body{
+      margin:0;
+      height:100vh;
+      display:grid;
+      place-items:center;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(circle at top, var(--bg1), var(--bg2));
+      color:var(--text);
+      overflow:hidden;
+    }
+
+    /* Fullscreen hearts overlay */
+    .hearts-layer{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      overflow:hidden;
+      z-index:1; /* behind card */
+    }
+    .fs-heart{
+      position:absolute;
+      bottom:-30px;
+      opacity:0;
+      animation: floatFS 4.5s ease-in forwards;
+      filter: drop-shadow(0 10px 12px rgba(0,0,0,0.10));
+      will-change: transform, opacity;
+    }
+    @keyframes floatFS{
+      0%{ opacity:0; transform: translateY(0) scale(0.8) rotate(0deg); }
+      12%{ opacity:1; }
+      100%{ opacity:0; transform: translateY(-110vh) scale(1.35) rotate(18deg); }
+    }
+
+    .card{
+      width:min(640px, 92vw);
+      background:#fff;
+      border-radius:22px;
+      padding:28px 22px 88px; /* extra bottom space for whisper + download row */
+      box-shadow:0 18px 50px rgba(0,0,0,0.12);
+      position:relative;
+      overflow:hidden;
+      text-align:center;
+      z-index:2;
+    }
+    .glow{
+      position:absolute;
+      inset:-60px -60px auto -60px;
+      height:190px;
+      background:
+        radial-gradient(circle at 20% 30%, rgba(255,61,127,0.25), transparent 55%),
+        radial-gradient(circle at 60% 40%, rgba(255,0,102,0.18), transparent 55%),
+        radial-gradient(circle at 85% 70%, rgba(255,61,127,0.18), transparent 55%);
+      filter: blur(2px);
+      pointer-events:none;
+      z-index:0;
+    }
+
+    h1{ margin:0 0 10px; font-size: clamp(24px, 4vw, 34px); }
+    p{ margin:0 0 16px; opacity:.85; font-size:16px; }
+
+    .options{ display:grid; gap:10px; margin-top:14px; }
+    .opt-btn{
+      border:1px solid rgba(0,0,0,.08);
+      border-radius:16px;
+      padding:12px 14px;
+      background:#fff;
+      cursor:pointer;
+      font-size:16px;
+      box-shadow:0 10px 18px rgba(0,0,0,.08);
+      user-select:none;
+      transition: transform .12s ease;
+    }
+    .opt-btn:active{ transform: scale(.98); }
+    .opt-btn.correct{
+      background: rgba(255,61,127,.10);
+      border-color: rgba(255,61,127,.45);
+    }
+
+    .hint{
+      margin-top:12px;
+      min-height:22px;
+      font-weight:800;
+      color:var(--pink);
+    }
+
+    .photo{
+      width:min(520px, 88vw);
+      height:280px;
+      object-fit:cover;
+      border-radius:18px;
+      box-shadow:0 14px 34px rgba(0,0,0,.14);
+      margin:10px auto 6px;
+      display:block;
+      border:1px solid rgba(0,0,0,.06);
+      background:#f6f6f6;
+    }
+
+    /* Action buttons */
+    .buttons{
+      position:relative;
+      height:92px;
+      margin-top:10px;
+    }
+    button.action{
+      border:0;
+      border-radius:999px;
+      padding:14px 22px;
+      font-size:16px;
+      cursor:pointer;
+      box-shadow:0 10px 18px rgba(0,0,0,.12);
+      transition: transform .12s ease;
+      user-select:none;
+      position:absolute;
+      top:18px;
+      z-index:2;
+    }
+    button.action:active{ transform: scale(.98); }
+
+    #yesBtn{
+      background:var(--pink);
+      color:#fff;
+      left:30%;
+      transform: translateX(-50%);
+    }
+    #noBtn{
+      background:#f1f1f1;
+      color:#333;
+      left:58%;
+    }
+
+    /* Celebration message */
+    .celebration{
+      margin-top: 20px;
+      position: relative;
+      height: 120px;
+      z-index:2;
+    }
+    .celebration-msg{
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--pink);
+      line-height: 1.25;
+      text-align: center;
+      opacity: 0;
+      transform: scale(0.9);
+      text-shadow: 0 0 0 rgba(255,61,127,0);
+    }
+    .show-celebration .celebration-msg{
+      animation: celebrateIn 1.1s ease forwards;
+    }
+    @keyframes celebrateIn{
+      0%{ opacity:0; transform:scale(0.9); text-shadow:0 0 0 rgba(255,61,127,0); }
+      60%{ opacity:1; transform:scale(1.05); text-shadow:0 0 20px rgba(255,61,127,0.35); }
+      100%{ opacity:1; transform:scale(1); text-shadow:0 0 14px rgba(255,61,127,0.25); }
+    }
+
+    /* Whisper corner */
+    .whisper{
+      position:absolute;
+      bottom: 14px;
+      right: 16px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:13px;
+      color:#555;
+      opacity:0;
+      transform: translateY(6px);
+      pointer-events:none;
+      z-index:2;
+    }
+    .whisper img{
+      width:46px;
+      height:46px;
+      border-radius:50%;
+      box-shadow: 0 10px 18px rgba(0,0,0,0.10);
+      border: 1px solid rgba(0,0,0,0.06);
+      animation: whisperBounce 1.8s infinite ease-in-out;
+    }
+    @keyframes whisperBounce{
+      0%,100%{ transform: translateY(0); }
+      50%{ transform: translateY(-4px); }
+    }
+    .show-celebration .whisper{
+      animation: whisperIn 1s ease forwards;
+      animation-delay: 1.1s;
+    }
+    @keyframes whisperIn{
+      from{ opacity:0; transform: translateY(6px); }
+      to{ opacity:0.9; transform: translateY(0); }
+    }
+
+    /* Recording UI */
+    .record-row{
+      display:flex;
+      gap:10px;
+      justify-content:center;
+      flex-wrap:wrap;
+      margin-top:12px;
+      position:relative;
+      z-index:2;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 14px;
+      border-radius:999px;
+      border:1px solid rgba(0,0,0,0.08);
+      background:#fff;
+      box-shadow:0 10px 18px rgba(0,0,0,0.08);
+      cursor:pointer;
+      font-weight:700;
+    }
+    .pill.primary{
+      background: var(--pink);
+      color:#fff;
+      border-color: rgba(255,61,127,0.45);
+    }
+    .status{
+      margin-top:10px;
+      font-size:14px;
+      opacity:.85;
+      min-height: 22px;
+      position:relative;
+      z-index:2;
+    }
+    .tiny{
+      font-size: 13px;
+      opacity: .75;
+      margin-top: 10px;
+      line-height: 1.35;
+    }
+
+    /* Camera preview overlay (visible on ALL screens once enabled) */
+    .cam-overlay{
+      position:fixed;
+      right:18px;
+      top:18px;
+      width: 180px;
+      height: 240px;
+      border-radius: 18px;
+      overflow:hidden;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.22);
+      border: 2px solid rgba(255,61,127,0.35);
+      background: #111;
+      z-index: 9999;
+      display:none;
+    }
+    .cam-overlay video{
+      width:20%;
+      height:20%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+    .cam-badge{
+      position:absolute;
+      left:10px;
+      top:10px;
+      font-size:12px;
+      font-weight:800;
+      padding:6px 10px;
+      border-radius:999px;
+      background: rgba(0,0,0,0.55);
+      color:#fff;
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+    .dot{
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      background:#ff3d7f;
+      box-shadow: 0 0 14px rgba(255,61,127,0.8);
+      animation: pulse 1.2s infinite ease-in-out;
+    }
+    @keyframes pulse{
+      0%,100%{ transform: scale(1); opacity: 0.9; }
+      50%{ transform: scale(1.35); opacity: 1; }
+    }
+
+    .hidden{ display:none; }
+
+    /* Love video */
+.love-video{
+  margin-top:18px;
+  opacity:0;
+  transform:scale(.92);
+  transition:1s;
+}
+.show-video .love-video{
+  opacity:1;
+  transform:scale(1);
+}
+.love-video video{
+  width:90%;
+  border-radius:18px;
+  box-shadow:0 20px 40px rgba(0,0,0,.35);
+  background:#000;
+}
+  </style>
+</head>
+<body>
+
+<div class="hearts-layer" id="heartsLayer"></div>
+
+<div class="cam-overlay" id="camOverlay">
+  <video id="camPreview" autoplay playsinline muted></video>
+  <div class="cam-badge"><span class="dot"></span>REC</div>
+</div>
+
+<div class="card" id="card">
+  <div class="glow"></div>
+
+  <!-- SCREEN 0: Recording setup -->
+  <section id="screen0">
+    <h1>One last thing 🎥</h1>
+    <p>Let’s record this moment (screen + your reactions) 💖</p>
+
+    <div class="record-row">
+      <button class="pill primary" id="startRecBtn">Start Recording</button>
+      <button class="pill" id="skipRecBtn">Skip</button>
+    </div>
+
+    <div class="status" id="recStatus"></div>
+
+    <div class="tiny">
+      • You’ll see browser permission popups.<br>
+      • Choose “This tab” for best results.<br>
+      • Camera may require HTTPS (or localhost).<br>
+      • Recording stays on your device (download at the end).
+    </div>
+  </section>
+
+  <!-- SCREEN 1 -->
+  <section id="screen1" class="hidden">
+    <h1>One quick question 😌</h1>
+    <p>When did I propose you?</p>
+    <div class="options" id="proposalOptions"></div>
+    <div class="hint" id="hint1"></div>
+  </section>
+
+  <!-- SCREEN 2 -->
+  <section id="screen2" class="hidden">
+    <h1>Okay… important 😳</h1>
+    <p>Do you love me?</p>
+    <div class="options" id="loveOptions"></div>
+    <div class="hint" id="hint2"></div>
+    <div class="tiny">There is only one correct answer 😄</div>
+  </section>
+
+  <!-- SCREEN 3 -->
+  <section id="screen3" class="hidden">
+    <h1>Memory check 📸</h1>
+    <p>Where did we take this photo?</p>
+
+    <img
+  class="photo"
+  id="couplePhoto"
+  src="img.jpg"
+  alt="Our photo"/>
+
+    <div class="options" id="photoOptions"></div>
+    <div class="hint" id="hint3"></div>
+  </section>
+
+  <!-- SCREEN 4 (FINAL) -->
+  <section id="screen4" class="hidden">
+    <h1>Final question 💘</h1>
+    <p>Will you be my Valentine?</p>
+
+    <div class="buttons" id="btnArea">
+      <button class="action" id="yesBtn">Yes 💖</button>
+      <button class="action" id="noBtn">No 🙃</button>
+    </div>
+
+    <div class="celebration">
+      <div class="celebration-msg" id="celebrationMsg">
+        I choose you.<br>
+        Today, tomorrow, always ❤️
+      </div>
+    </div>
+
+
+    <!-- VIDEO AT THE END -->
+  <div class="love-video">
+    <video id="loveVideo" style="height:250px; width: 150px;" playsinline autoplay loop muted>
+      <source src="myvideo.mp4" type="video/mp4" />
+    </video>
+  </div>
+
+    <div class="whisper" id="whisperBox">
+      <img
+        src="https://media.giphy.com/media/xUPGcguWZHRC2HyBRS/giphy.gif"
+        alt="romantic whisper gif"
+      />
+      <span>Plot twist: I already knew your answer 😄❤️</span>
+    </div>
+
+    <div class="record-row" style="margin-top: 10px;">
+      <a class="pill primary" id="downloadLink" style="display:none; text-decoration:none;" download="valentine-recording.webm">
+        Download Recording
+      </a>
+    </div>
+
+    <div class="status" id="endStatus"></div>
+  </section>
+</div>
+
+<script>
+  /************ CONFIG YOU MAY EDIT ************/
+  const proposalChoices = ["February 14, 2023", "November 28, 2022", "December 25, 2022"];
+  const correctProposalIndex = 1;
+
+  const loveChoices = ["Yes, I do love you Chanakya"];
+  const correctLoveIndex = 0;
+
+  const photoChoices = ["Leavenworth","Carbonado", "Snoqualmie Pass"];
+  const correctPhotoIndex = 0;
+  /********************************************/
+
+  // Screens
+  const s0 = document.getElementById("screen0");
+  const s1 = document.getElementById("screen1");
+  const s2 = document.getElementById("screen2");
+  const s3 = document.getElementById("screen3");
+  const s4 = document.getElementById("screen4");
+
+  const card = document.getElementById("card");
+  const heartsLayer = document.getElementById("heartsLayer");
+
+  function showScreen(n){
+    s0.classList.toggle("hidden", n !== 0);
+    s1.classList.toggle("hidden", n !== 1);
+    s2.classList.toggle("hidden", n !== 2);
+    s3.classList.toggle("hidden", n !== 3);
+    s4.classList.toggle("hidden", n !== 4);
+  }
+
+  function renderOptions(container, choices, correctIndex, onCorrect, hintEl){
+    container.innerHTML = "";
+    choices.forEach((text, idx) => {
+      const btn = document.createElement("button");
+      btn.className = "opt-btn";
+      btn.textContent = text;
+
+      btn.addEventListener("click", () => {
+        if (idx === correctIndex){
+          btn.classList.add("correct");
+          hintEl.textContent = "Correct 😍";
+          setTimeout(onCorrect, 450);
+        } else {
+          hintEl.textContent = "Nooo 😅 Try again!";
+        }
+      });
+
+      container.appendChild(btn);
+    });
+  }
+
+  // Render options screens 1-3
+  renderOptions(
+    document.getElementById("proposalOptions"),
+    proposalChoices,
+    correctProposalIndex,
+    () => showScreen(2),
+    document.getElementById("hint1")
+  );
+
+  renderOptions(
+    document.getElementById("loveOptions"),
+    loveChoices,
+    correctLoveIndex,
+    () => showScreen(3),
+    document.getElementById("hint2")
+  );
+
+  renderOptions(
+    document.getElementById("photoOptions"),
+    photoChoices,
+    correctPhotoIndex,
+    () => showScreen(4),
+    document.getElementById("hint3")
+  );
+
+  // Final screen No runs away
+  const noBtn = document.getElementById("noBtn");
+  const yesBtn = document.getElementById("yesBtn");
+  const btnArea = document.getElementById("btnArea");
+
+  function moveNoButton() {
+    const areaRect = btnArea.getBoundingClientRect();
+    const btnRect = noBtn.getBoundingClientRect();
+
+    const maxX = areaRect.width - btnRect.width;
+    const maxY = areaRect.height - btnRect.height;
+
+    noBtn.style.left = Math.max(0, Math.floor(Math.random() * maxX)) + "px";
+    noBtn.style.top  = Math.max(0, Math.floor(Math.random() * maxY)) + "px";
+  }
+
+  noBtn.addEventListener("mouseenter", moveNoButton);
+  noBtn.addEventListener("mousemove", moveNoButton);
+  noBtn.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    moveNoButton();
+  }, { passive: false });
+
+  // Fullscreen hearts burst
+  function spawnFullScreenHeart(){
+    const heart = document.createElement("div");
+    heart.className = "fs-heart";
+    const hearts = ["❤️","💖","💘","💕","💗"];
+    heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+    heart.style.left = (Math.random() * 100) + "vw";
+    heart.style.fontSize = (18 + Math.random() * 26) + "px";
+    heart.style.animationDuration = (3.4 + Math.random() * 2.6) + "s";
+    heartsLayer.appendChild(heart);
+    setTimeout(() => heart.remove(), 8000);
+  }
+
+  function startHeartsBurst(){
+    for (let i = 0; i < 55; i++){
+      setTimeout(spawnFullScreenHeart, i * 55);
+    }
+    let count = 0;
+    const interval = setInterval(() => {
+      spawnFullScreenHeart();
+      count++;
+      if (count > 140) clearInterval(interval);
+    }, 85);
+  }
+
+  /************ SCREEN + CAMERA RECORDING ************/
+  const startRecBtn = document.getElementById("startRecBtn");
+  const skipRecBtn  = document.getElementById("skipRecBtn");
+  const downloadLink = document.getElementById("downloadLink");
+  const recStatus = document.getElementById("recStatus");
+  const endStatus = document.getElementById("endStatus");
+
+  const camOverlay = document.getElementById("camOverlay");
+  const camPreview = document.getElementById("camPreview");
+
+  let recorder = null;
+  let recordedChunks = [];
+  let screenStream = null;
+  let camStream = null;
+  let mixedStream = null;
+
+  let autoStopTimer = null;
+  let autoDownloadTimer = null;
+
+  function pickMimeType() {
+    const candidates = [
+      "video/webm;codecs=vp9,opus",
+      "video/webm;codecs=vp8,opus",
+      "video/webm"
+    ];
+    return candidates.find(t => MediaRecorder.isTypeSupported(t)) || "";
+  }
+
+  async function startRecording() {
+    recordedChunks = [];
+    recStatus.textContent = "Requesting permissions…";
+
+    // screen
+    screenStream = await navigator.mediaDevices.getDisplayMedia({
+      video: { 
+      frameRate: 60,
+    width:  { ideal: 3840 },   // 4K target
+    height: { ideal: 2160 }
+      },
+      audio: true
+    });
+
+    // camera
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video: { 
+        width:  { ideal: 1920 },
+    height: { ideal: 1080 },
+    frameRate: 60
+      },
+      audio: true
+    });
+
+    camPreview.srcObject = camStream;
+    camOverlay.style.display = "block";
+
+    // mix into canvas
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = 1280;
+    canvas.height = 720;
+
+    const screenVideo = document.createElement("video");
+    screenVideo.srcObject = screenStream;
+    screenVideo.muted = true;
+    screenVideo.playsInline = true;
+    await screenVideo.play();
+
+    const camVideo = document.createElement("video");
+    camVideo.srcObject = camStream;
+    camVideo.muted = true;
+    camVideo.playsInline = true;
+    await camVideo.play();
+
+    function draw() {
+      ctx.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
+
+      // camera PIP top-right
+      const pipW = 260, pipH = 340, pipX = canvas.width - pipW - 18, pipY = 18;
+      const r = 18;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(pipX + r, pipY);
+      ctx.arcTo(pipX + pipW, pipY, pipX + pipW, pipY + pipH, r);
+      ctx.arcTo(pipX + pipW, pipY + pipH, pipX, pipY + pipH, r);
+      ctx.arcTo(pipX, pipY + pipH, pipX, pipY, r);
+      ctx.arcTo(pipX, pipY, pipX + pipW, pipY, r);
+      ctx.closePath();
+      ctx.clip();
+
+      // mirror
+      ctx.translate(pipX + pipW, pipY);
+      ctx.scale(-1, 1);
+      ctx.drawImage(camVideo, 0, 0, pipW, pipH);
+      ctx.restore();
+
+      // border
+      ctx.save();
+      ctx.strokeStyle = "rgba(255,61,127,0.45)";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(pipX + r, pipY);
+      ctx.arcTo(pipX + pipW, pipY, pipX + pipW, pipY + pipH, r);
+      ctx.arcTo(pipX + pipW, pipY + pipH, pipX, pipY + pipH, r);
+      ctx.arcTo(pipX, pipY + pipH, pipX, pipY, r);
+      ctx.arcTo(pipX, pipY, pipX + pipW, pipY, r);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.restore();
+
+      requestAnimationFrame(draw);
+    }
+    draw();
+
+    const canvasStream = canvas.captureStream(30);
+
+    // audio mix (screen + cam)
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const dest = audioCtx.createMediaStreamDestination();
+
+    const screenAudioTracks = screenStream.getAudioTracks();
+    const camAudioTracks = camStream.getAudioTracks();
+
+    if (screenAudioTracks.length) {
+      audioCtx.createMediaStreamSource(new MediaStream([screenAudioTracks[0]])).connect(dest);
+    }
+    if (camAudioTracks.length) {
+      audioCtx.createMediaStreamSource(new MediaStream([camAudioTracks[0]])).connect(dest);
+    }
+
+    mixedStream = new MediaStream([
+      ...canvasStream.getVideoTracks(),
+      ...dest.stream.getAudioTracks()
+    ]);
+
+    const mimeType = pickMimeType();
+    recorder = new MediaRecorder(mixedStream, mimeType ? { mimeType } : undefined);
+
+    recorder.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+    };
+
+    recorder.onstop = () => {
+      const blob = new Blob(recordedChunks, { type: "video/webm" });
+      const url = URL.createObjectURL(blob);
+
+      downloadLink.href = url;
+      downloadLink.style.display = "inline-flex";
+
+      endStatus.textContent = "Recording ready ✅ Auto-downloading…";
+
+      // Auto-trigger download click (browser may block if not allowed)
+      setTimeout(() => {
+        try { downloadLink.click(); } catch {}
+      }, 250);
+    };
+
+    recorder.start(250);
+    recStatus.textContent = "Recording started ✅";
+  }
+
+  function stopRecording() {
+    // clear any pending timers
+    if (autoStopTimer) { clearTimeout(autoStopTimer); autoStopTimer = null; }
+    if (autoDownloadTimer) { clearTimeout(autoDownloadTimer); autoDownloadTimer = null; }
+
+    try {
+      if (recorder && recorder.state !== "inactive") recorder.stop();
+    } catch {}
+
+    // stop tracks
+    [mixedStream, screenStream, camStream].forEach((s) => {
+      if (!s) return;
+      s.getTracks().forEach(t => t.stop());
+    });
+
+    camOverlay.style.display = "none";
+    recStatus.textContent = "";
+  }
+
+  startRecBtn.addEventListener("click", async () => {
+    try {
+      await startRecording();
+      showScreen(1);
+    } catch (err) {
+      recStatus.textContent = "Couldn’t start recording. Please allow permissions (screen + camera).";
+      console.error(err);
+    }
+  });
+
+  skipRecBtn.addEventListener("click", () => {
+    showScreen(1);
+  });
+
+  document.getElementById("yesBtn").onclick=()=>{
+  card.classList.add("show-celebration","show-video");
+  noBtn.style.display="none";
+  playHearts();
+
+  const v=document.getElementById("loveVideo");
+  v.currentTime=0;
+  v.play().catch(()=>v.controls=true);
+};
+  // YES: trigger celebration + hearts + AUTO STOP & DOWNLOAD after 10s
+  yesBtn.addEventListener("click", () => {
+    card.classList.add("show-celebration");
+    noBtn.style.display = "none";
+    noBtn.disabled = true;
+
+    startHeartsBurst();
+
+    if (recorder && recorder.state !== "inactive") {
+      endStatus.textContent = "Celebrating… 🎉 Auto-saving the recording in 10 seconds…";
+
+      // auto stop after 10 seconds
+      autoStopTimer = setTimeout(() => {
+        endStatus.textContent = "Saving… 💖";
+        stopRecording();
+      }, 10000);
+    } else {
+      endStatus.textContent = "";
+    }
+  });
+
+  // Start on recording screen
+  showScreen(0);
+</script>
+
+</body>
+</html>
